@@ -20,13 +20,13 @@ def processar_frame(image, face_detection, hands_detection):
 
   return image, face_results, hands_results
 
-def processar_estado_mao(hand_landmarks, mp_hands, x_face):
+def processar_estado_mao(hand_landmarks, mp_hands, x_face, y_face):
     dedo_medio, dedo_indicador, dedo_anelar, dedo_mindinho, face_mao_dir = False, False, False, False, False
 
     if (hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_MCP].x > hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_MCP].x and
         hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_MCP].x > x_face and
         hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP].x > x_face and
-        hand_landmarks.landmark[mp_hands.HandLandmark.WRIST].x > x_face):
+        hand_landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_MCP].y < y_face):
         face_mao_dir = True
 
     # Verifica se o dedo medio esta esticado
@@ -95,7 +95,8 @@ def main():
         bboxC = detection.location_data.relative_bounding_box
         ih, iw, _ = frame.shape
         x, y, w, h = int(bboxC.xmin * iw), int(bboxC.ymin * ih), int(bboxC.width * iw), int(bboxC.height * ih)
-        x_face = x/1000
+        x_face = bboxC.xmin
+        y_face = bboxC.ymin
         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
     else:
       nao_esta_detectando_face = True
@@ -103,7 +104,7 @@ def main():
     # Se a mão for detectada
     if hands_results.multi_hand_landmarks:
       for hand_landmarks in hands_results.multi_hand_landmarks:# Para cada mão detectada
-        estado_mao  = processar_estado_mao(hand_landmarks, mp_hands_detection, x_face) # Verifica se a mão está aberta
+        estado_mao  = processar_estado_mao(hand_landmarks, mp_hands_detection, x_face, y_face) # Verifica se a mão está aberta
         mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands_detection.HAND_CONNECTIONS) # Desenha as conexões das mãos
 
     mao_aberta = False
